@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html ng-app="DashPlayer" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Dash JavaScript Player</title>
+    <meta name="description" content="" />
+    <link rel="icon" type="image/x-icon" href="https://dashif.org/wp-content/uploads/2014/12/dashif.ico" />
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
+
+    <link rel="stylesheet" href="app/lib/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="app/lib/bootstrap/css/bootstrap-theme.css">
+    <link rel="stylesheet" href="app/lib/bootstrap/css/bootstrap-glyphicons.css">
+    <link rel="stylesheet" href="app/css/deecamp.css">
+    <link rel="stylesheet" href="../../contrib/akamai/controlbar/controlbar.css">
+
+    <!--Libs-->
+    <script src="app/lib/jquery/jquery-3.1.1.min.js"></script>
+
+    <script src="app/lib/angular/angular.min.js"></script>
+    <script src="app/lib/angular/angular-resource.min.js"></script>
+    <script src="app/lib/angular/angular-flot.js"></script>
+
+    <script src="app/lib/bootstrap/js/bootstrap.min.js"></script>
+
+    <script src="app/lib/flot/jquery.flot.min.js"></script>
+    <script src="app/lib/flot/jquery.flot.resize.min.js"></script>
+    <script src="app/lib/flot/jquery.flot.axislabels.js"></script>
+    <!-- App -->
+    <script src="../../dist/dash.all.debug.js"></script>
+    <script src="../../contrib/akamai/controlbar/ControlBar.js"></script>
+    <script src="app/deecamp.js"></script>
+    <script src="app/rules/DownloadRatioRule.js"></script>
+    <script src="app/rules/ThroughputRule.js"></script>
+
+</head>
+<body ng-controller="DashController" >
+
+<!-- Mobile  Menu-->
+<div class="modal fade" id="Modal">
+    <div class="modal-dialog">
+        <div class="list-group modal-list">
+            <ul>
+                <li ng-repeat="item in availables" ng-class="{'sub':item.submenu}">
+                    <span ng-show="!item.submenu" ng-click="setStream(item)">{{item.name}}</span>
+                    <span ng-show="item.submenu">{{item.name}}</span>
+                    <ul ng-show="item.submenu">
+                        <li ng-repeat="subitem in item.submenu">
+                            <span ng-click="setStream(subitem)" ng-if="subitem.url"
+                                  data-dismiss="modal">{{subitem.name}}</span>
+                            <span ng-if="!subitem.url">{{subitem.name}}</span>
+                            <ul ng-if="subitem.submenu">
+                                <li ng-repeat="subsubitem in subitem.submenu">
+                                    <span ng-click="setStream(subsubitem)"
+                                          data-dismiss="modal">{{subsubitem.name}}</span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<!-- TITLE BAR -->
+<div class="container">
+    <div class="row title-header">
+
+        <div class="branding">
+            <a href="https://deecamp.chuangxin.com/apply" target="_blank"><img class="image" src="app/img/deecamp.jpg"/></a>
+            <span id="big-title">19组 视力2.0</span>
+            <!-- <span ng-bind="version"></span> -->
+            <!-- <span id="commit-info"></span> -->
+        </div>
+
+        <!-- Using iframe to solve pre-flight request issue from GIT-->
+        <!-- <div class="top-buttons">
+            <iframe id="star-button"
+                    src="//ghbtns.com/github-btn.html?user=Dash-Industry-Forum&repo=dash.js&type=watch&count=true&size=large"
+                    height="30" width="150">
+            </iframe>
+            <iframe id="fork-button"
+                    src="//ghbtns.com/github-btn.html?user=Dash-Industry-Forum&repo=dash.js&type=fork&count=true&size=large"
+                    height="30" width="150" >
+            </iframe>
+        </div> -->
+    </div>
+
+    <div class="row">
+        <div class="input-group">
+            <div id="desktop-streams" class="input-group-btn">
+                <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+                    Stream
+                </button>
+                <!-- <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu">
+                    <li class="dropdown-submenu" ng-if="item.submenu" ng-repeat="item in availableStreams" ng-mouseover="onStreamItemHover(item)">
+                        <a tabindex="-1" href="#">{{item.name}}</a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-submenu" ng-repeat="subitem in item.submenu" ng-if="subitem.submenu">
+                                <a tabindex="-1" href="#">{{subitem.name}}</a>
+                                <ul class="dropdown-menu">
+                                    <li ng-repeat="subsubitem in subitem.submenu">
+                                        <a title="{{ subsubitem.moreInfo && 'See ' + subsubitem.moreInfo + ' for more information' || undefined }}"
+                                           ng-click="setStream(subsubitem)">{{subsubitem.name}}</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li ng-repeat="subitem in item.submenu" ng-if="subitem.url">
+                                <a title="{{ subitem.moreInfo && 'See ' + subitem.moreInfo + ' for more information' || undefined }}"
+                                   ng-click="setStream(subitem)">{{subitem.name}}</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul> -->
+            </div>
+            <!-- <div id="mobile-streams" class="input-group-btn">
+                <button type="button" class="btn btn-warning" data-toggle="modal" href="#streamModal">
+                    Stream <span class="caret"></span>
+                </button>
+            </div> -->
+            <input type="text" class="form-control" ng-model="selectedItem.url">
+            <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" ng-click="doStop()">Stop</button>
+                    <button class="btn btn-warning" type="button" ng-click="doLoad()">Load</button>
+                </span>
+        </div>
+    </div>
+
+    <!-- OPTIONS MENU-->
+    <!-- 载入数据，Load和Stop的控制 -->
+    <div ng-cloak class="row options-wrapper" ng-class="{'options-show':optionsGutter, 'options-hide':!optionsGutter}">
+        <div class="options-item">
+            <div class="options-item-title">Track Switch Mode</div>
+            <div class="options-item-body">
+                <label class="options-label">Audio:</label>
+                <label data-toggle="tooltip" data-placement="right"
+                       title="When a track is switched, the portion of the buffer that contains old track data is cleared">
+                    <input  type="radio" id="always-replace-audio" autocomplete="off" name="track-switch-audio" checked="checked" ng-click="changeTrackSwitchMode('alwaysReplace', 'audio')" >
+                    always replace
+                </label>
+                <label data-toggle="tooltip" data-placement="right"
+                       title="When a track is switched, the portion of the buffer that contains old track data is NOT cleared">
+                    <input type="radio" id="never-replace-audio" autocomplete="off" name="track-switch-audio" ng-click="changeTrackSwitchMode('neverReplace', 'audio')">
+                    never replace
+                </label>
+                <label class="options-label">Video:</label>
+                <label data-toggle="tooltip" data-placement="right"
+                       title="When a track is switched, the portion of the buffer that contains old track data is cleared">
+                    <input  type="radio" id="always-replace-video" autocomplete="off" name="track-switch-video" checked="checked" ng-click="changeTrackSwitchMode('alwaysReplace', 'video')" >
+                    always replace
+                </label>
+                <label data-toggle="tooltip" data-placement="right"
+                       title="When a track is switched, the portion of the buffer that contains old track data is NOT cleared">
+                    <input type="radio" id="never-replace-video" autocomplete="off" name="track-switch-video" ng-click="changeTrackSwitchMode('neverReplace', 'video')">
+                    never replace
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- <div id="playAll" class="playAll btn" ng-click="playAll()">全部播放</!--> -->
+    <div style="display: flex">
+        <!-- VIDEO PLAYER1 / CONTROLS -->
+        <div class="row" style="flex-grow: 1;width:50%;">
+            <div class="dash-video-player col-md-9">
+                <div id="videoContainer" class="videoContainer">
+                    <video></video>
+                    <div id="video-caption"></div>
+                    <div id="videoController" class="video-controller unselectable" ng-cloak>
+                        <div id="playPauseBtn" class="btn-play-pause" data-toggle="tooltip" data-placement="bottom" title="Play/Pause">
+                            <span id="iconPlayPause" class="icon-play"></span>
+                        </div>
+                        <span id="videoTime" class="time-display">00:00:00</span>
+                        <div id="fullscreenBtn" class="btn-fullscreen control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Fullscreen">
+                            <span class="icon-fullscreen-enter"></span>
+                        </div>
+                        <div id="bitrateListBtn" class="btn-bitrate control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Bitrate List">
+                            <span class="icon-bitrate"></span>
+                        </div>
+                        <input type="range" id="volumebar" class="volumebar" value="1" min="0" max="1" step=".01"/>
+                        <div id="muteBtn" class="btn-mute control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Mute">
+                            <span id="iconMute" class="icon-mute-off"></span>
+                        </div>
+                        <div id="trackSwitchBtn" class="btn-track-switch control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Track List">
+                            <span class="icon-tracks"></span>
+                        </div>
+                        <div id="captionBtn" class="btn-caption control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Closed Caption / Subtitles">
+                            <span class="icon-caption"></span>
+                        </div>
+                        <span id="videoDuration" class="duration-display">00:00:00</span>
+                        <div class="seekContainer">
+                            <div id="seekbar" class="seekbar seekbar-complete">
+                                <div id="seekbar-buffer" class="seekbar seekbar-buffer"></div>
+                                <div id="seekbar-play" class="seekbar seekbar-play"></div>
+                            </div>
+                        </div>
+                        <div id="thumbnail-container" class="thumbnail-container">
+                            <div id="thumbnail-elem" class="thumbnail-elem"></div>
+                            <div id="thumbnail-time-label" class="thumbnail-time-label"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIDEO PLAYER2 / CONTROLS -->
+        <div class="row" style="flex-grow: 1;width:50%;">
+            <div class="dash-video-player player-copy col-md-9">
+                <div id="videoContainer2" class="videoContainer">
+                    <video></video>
+                    <div id="video-caption2"></div>
+                    <div id="videoController2" class="video-controller unselectable" ng-cloak>
+                        <div id="playPauseBtn2" class="btn-play-pause" data-toggle="tooltip" data-placement="bottom" title="Play/Pause">
+                            <span id="iconPlayPause2" class="icon-play"></span>
+                        </div>
+                        <span id="videoTime2" class="time-display">00:00:00</span>
+                        <div id="fullscreenBtn2" class="btn-fullscreen control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Fullscreen">
+                            <span class="icon-fullscreen-enter"></span>
+                        </div>
+                        <div id="bitrateListBtn2" class="btn-bitrate control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Bitrate List">
+                            <span class="icon-bitrate"></span>
+                        </div>
+                        <input type="range" id="volumebar2" class="volumebar" value="1" min="0" max="1" step=".01"/>
+                        <div id="muteBtn2" class="btn-mute control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Mute">
+                            <span id="iconMute2" class="icon-mute-off"></span>
+                        </div>
+                        <div id="trackSwitchBtn2" class="btn-track-switch control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Track List">
+                            <span class="icon-tracks"></span>
+                        </div>
+                        <div id="captionBtn2" class="btn-caption control-icon-layout" data-toggle="tooltip" data-placement="bottom" title="Closed Caption / Subtitles">
+                            <span class="icon-caption"></span>
+                        </div>
+                        <span id="videoDuration2" class="duration-display">00:00:00</span>
+                        <div class="seekContainer">
+                            <div id="seekbar2" class="seekbar seekbar-complete">
+                                <div id="seekbar-buffer2" class="seekbar seekbar-buffer"></div>
+                                <div id="seekbar-play2" class="seekbar seekbar-play"></div>
+                            </div>
+                        </div>
+                        <div id="thumbnail-container2" class="thumbnail-container">
+                            <div id="thumbnail-elem2" class="thumbnail-elem"></div>
+                            <div id="thumbnail-time-label2" class="thumbnail-time-label"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ERROR MODAL -->
+    <!-- <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header errorModalHeader">
+                    <h5 class="modal-title" id="errorModalLabel">Error {{errorType}}</h5>
+                </div>
+                <div class="modal-body">
+                    {{error}}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+  </div> -->
+
+    <!-- CHARTING -->
+    <div class="chart-panel">
+        <div class="chart-controls">
+            <div class="btn-group">
+                <button id="disable-chart-btn" class="btn btn-warning" ng-click="clearChartData()" ng-cloak>Clear</button>
+                <button id="disable-chart-btn" class="btn btn-warning" ng-click="onChartEnableButtonClick()" ng-cloak>{{getChartButtonLabel()}}</button>
+            </div>
+            <div id="legend-wrapper" class="legend-row">
+            </div>
+        </div>
+        <div id="chart-wrapper" >
+            <div id="chart-inventory" >
+                <flot dataset="chartData" options="chartOptions"></flot>
+            </div>
+        </div>
+        <div id="chart-wrapper2" >
+            <div id="chart-inventory2" >
+                <flot dataset="chartData2" options="chartOptions"></flot>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<!-- <div class="footer-area" ng-cloak>
+    <div class="container">
+        <div class="row"> -->
+<!-- <div class="col-md-12">
+    <h3 class="footer-text">Contributors:</h3>
+    <a ng-repeat="item in contributors" class="footer-text" href="{{item.link}}" target="_blank">
+        <img ng-show="hasLogo(item)" ng-src="{{item.logo}}" alt="{{item.link}}"/>
+        <span class="contributor" ng-show="!hasLogo(item)">{{item.name}}</span>
+    </a>
+</div> -->
+</div>
+</div>
+</div>
+</body>
+</html>

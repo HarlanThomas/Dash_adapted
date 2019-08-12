@@ -4,7 +4,7 @@ Adaption of dash.js to connect mediaplayer with customized algo
 To show process bar in the dash player,
     you should not only download the folder ``` dash-if-reference-player```into ```dash.js/sample```,
     
-    But also add the css declare of process bar 
+But also add the css declare of process bar 
 Open ```dash.js/contrib/akamai/controlbar/controlbar.css ``` then add the following code paragraph into the 74 row beneath ```.volume{...}```
 
 ```

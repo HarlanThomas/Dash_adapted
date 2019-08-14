@@ -13,5 +13,5 @@ Open ```dash.js/contrib/akamai/controlbar/controlbar.css ``` then add the follow
     width: 250px;
 }
 ```
-[![Watch the video](https://github.com/HarlanThomas/Dash_adapted/blob/master/dash-if-reference-player/19deecamp.gif)]
+![Watch the video](https://github.com/HarlanThomas/Dash_adapted/blob/master/dash-if-reference-player/19deecamp.gif)
 

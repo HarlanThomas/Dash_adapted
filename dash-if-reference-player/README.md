@@ -1,4 +1,4 @@
-# Dash_adapted
+    # Dash_adapted
 Adaption of dash.js to connect mediaplayer with customized algo
 
 To show process bar in the dash player,
@@ -15,4 +15,4 @@ Open ```dash.js/contrib/akamai/controlbar/controlbar.css ``` then add the follow
 ```
 
 
-[![Watch the video](https://github.com/HarlanThomas/Dash_adapted/blob/master/dash-if-reference-player/)](https://github.com/HarlanThomas/Dash_adapted/blob/master/dash-if-reference-player/19deecamp%7E2.mp4)
+<img src="https://github.com/HarlanThomas/Dash_adapted/tree/master/dash-if-reference-player/19deecamp.wmv" alt="show" />
